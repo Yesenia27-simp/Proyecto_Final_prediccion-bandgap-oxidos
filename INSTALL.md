@@ -9,12 +9,9 @@ Guía detallada de instalación y troubleshooting para **Antigravity Nano Resear
 ### Obligatorios
 
 1. **Antigravity** - [Instalación](https://github.com/google-deepmind/antigravity)
-2. **Git** - [Descargar](https://git-scm.com/downloads)
-
-### Instalados Automáticamente (si faltan)
-
-- **Conda o Miniconda** (El script `setup.bat` lo instalará por ti si no lo tienes)
-- **Python 3.11**
+2. **Conda o Miniconda** - [Descargar](https://docs.conda.io/en/latest/miniconda.html)
+3. **Git** - [Descargar](https://git-scm.com/downloads)
+4. **Python 3.11** (se instalará vía conda)
 
 ### Opcionales
 
@@ -33,7 +30,6 @@ git clone https://github.com/ljyudico/Antigravity-Nano-Research-Multiagentic-Cor
 cd Antigravity-Nano-Research-Multiagentic-Core
 setup.bat
 ```
-> **Nota**: Si no tienes Conda instalado, `setup.bat` descargará e instalará Miniconda automáticamente. Este proceso puede tardar unos minutos.
 
 **Linux/macOS**:
 ```bash
@@ -98,21 +94,6 @@ python verify_installation.py
 export PATH="$HOME/miniconda3/bin:$PATH"
 source ~/.bashrc
 ```
-
----
-
-### Error: "CondaHTTPError: HTTP 000 CONNECTION FAILED"
-
-**Causa**: Problemas de conexión a los repositorios de Anaconda, común en redes lentas o corporativas.
-
-**Solución**:
-El script `setup.bat` actualizado intenta manejar esto automáticamente aumentando el tiempo de espera. Si persiste:
-
-1. Aumenta manualmente el timeout:
-   ```bash
-   conda config --set remote_read_timeout_secs 300
-   ```
-2. Intenta usar un espejo (mirror) o verifica tu firewall.
 
 ---
 

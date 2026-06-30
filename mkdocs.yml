@@ -1,0 +1,109 @@
+site_name: Antigravity Nano Research
+site_url: https://multiagent-ai-lab.github.io/Antigravity-Nano-Research-Multiagentic-Core/
+site_description: AI Applied to Nanotechnology — Multi-Agent Systems Educational Course
+site_author: ljyudico
+repo_url: https://github.com/Multiagent-AI-Lab/Antigravity-Nano-Research-Multiagentic-Core
+repo_name: Multiagent-AI-Lab/Antigravity-Nano-Research
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+  logo: assets/logo.png
+  favicon: assets/logo.png
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Course Content:
+      - Unit 1 — Nanoscale Modeling: units/unit1.md
+      - Unit 2 — Molecular Simulation: units/unit2.md
+      - Unit 3 — ML for Nanomaterials: units/unit3.md
+      - Unit 4 — Applied AI: units/unit4.md
+      - Unit 5 — Multi-Agent Systems: units/unit5.md
+      - Unit 6 — Integration Project: units/unit6.md
+  - Architecture: architecture.md
+  - Installation: installation.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Multiagent-AI-Lab/Antigravity-Nano-Research-Multiagentic-Core
+  alternate:
+    - name: English
+      link: /Antigravity-Nano-Research-Multiagentic-Core/en/
+      lang: en
+    - name: Español
+      link: /Antigravity-Nano-Research-Multiagentic-Core/es/
+      lang: es
+    - name: Português
+      link: /Antigravity-Nano-Research-Multiagentic-Core/pt/
+      lang: pt
+    - name: 中文
+      link: /Antigravity-Nano-Research-Multiagentic-Core/zh/
+      lang: zh
+    - name: Français
+      link: /Antigravity-Nano-Research-Multiagentic-Core/fr/
+      lang: fr
+    - name: Deutsch
+      link: /Antigravity-Nano-Research-Multiagentic-Core/de/
+      lang: de
+    - name: 日本語
+      link: /Antigravity-Nano-Research-Multiagentic-Core/ja/
+      lang: ja
+    - name: हिन्दी
+      link: /Antigravity-Nano-Research-Multiagentic-Core/hi/
+      lang: hi
+  generator: false
+
+copyright: Copyright &copy; 2026 ljyudico — Apache-2.0 License

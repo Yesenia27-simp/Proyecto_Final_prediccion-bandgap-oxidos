@@ -1,0 +1,144 @@
+# .gitignore for Antigravity Nano Research Multiagentic Core
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+ia_nano/
+venv/
+ENV/
+env/
+.venv
+.conda/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Environment variables
+.env
+.env.local
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Data files (large datasets should not be in repo)
+*.h5
+*.hdf5
+*.nc
+*.cdf
+data/raw/*
+!data/raw/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+
+# OS specific
+Thumbs.db
+.DS_Store
+*.lnk
+
+# Materials Project API keys
+.mp_api_key
+mp_config.json
+
+# Simulation outputs (large files)
+*.xyz
+*.pdb
+*.traj
+*.dump
+
+# Notebook backup files
+*.bak_*
+*.bak
+
+# Model artifacts (generated during training)
+*.pth
+*.pkl
+*.onnx
+*.onnx.data
+
+# Generated plots (auto-created by notebooks)
+educational_content/unit_03_ml_nanomaterials/*.png
+educational_content/unit_04_applied_ai/*.png
+educational_content/unit_05_multi_agent_sys/*.png
+
+# Generated data files (auto-created by notebooks)
+educational_content/unit_04_applied_ai/*.csv
+educational_content/unit_04_applied_ai/*.txt
+
+# Unit 05 — generated/runtime files (not for publication)
+educational_content/unit_05_multi_agent_sys/chroma_u5_05/
+educational_content/unit_05_multi_agent_sys/llm_cache/
+educational_content/unit_05_multi_agent_sys/__pycache__/
+educational_content/unit_05_multi_agent_sys/PLAN_ACTUALIZACION_UNIDAD_5.md
+educational_content/unit_05_multi_agent_sys/PROTOCOLO_UNIDAD_5_MULTIAGENTE.md
+
+# Large downloaded datasets
+educational_content/unit_03_ml_nanomaterials/data/MNIST/
+
+# Unit 05 — sensitive/local files (not for publication)
+educational_content/unit_05_multi_agent_sys/.env.example
+
+# Unit 06 — generated/runtime files (not for publication)
+educational_content/unit_06_integration_project/.env.example
+educational_content/unit_06_integration_project/requirements.txt
+educational_content/unit_06_integration_project/mi_proyecto_api/requirements.txt
+educational_content/unit_06_integration_project/mi_proyecto_api/__pycache__/
+
+# Tests — generated output files
+tests/pytest_output.txt
+
+# Internal scripts / audit docs (not for publication)
+verify_notebook_quality*.py
+AUDITORIA_CUMPLIMIENTO.md
+project_memory.md
+logs.log
+remove_output.txt
+remove_badges_u1_u2.py
+
+# Development/maintenance scripts (one-off fixes, not part of the course)
+fix_*.py
+parse_nb.py
+inspect_u6.py
+analyze_u506.py
+fix_u6_output.txt
+u6_04_cell5.txt
+u6_cells.txt
+u6_map.txt
+tmp/

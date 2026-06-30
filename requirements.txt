@@ -1,8 +1,9 @@
 # =============================================================================
-# REQUIREMENTS.TXT - Curso IA Nanotecnología
-# Actualizado: 2026-02-02
-# Incluye todas las dependencias de Unidades 1-7 y Capítulos Avanzados
+# REQUIREMENTS.TXT - Curso IA Nanotecnologia
+# Actualizado: 2026-04-07
+# Incluye todas las dependencias de Unidades 1-6
 # =============================================================================
+# Unidad 4 (IA Aplicada): ase, mp_api, scikit-image, scikit-learn ya incluidos
 
 # --- CORE SCIENTIFIC STACK ---
 numpy>=1.24.0
@@ -14,13 +15,25 @@ sympy>=1.12
 
 # --- MACHINE LEARNING ---
 scikit-learn>=1.3.0
+pycaret>=3.3.0            # AutoML y optimizaciones (Unidad 3)
 torch>=2.0.0              # PyTorch para redes neuronales (Unidad 3)
 torchvision>=0.15.0       # Utilidades de visión para PyTorch
+gymnasium>=0.29.0         # Entornos RL (CartPole, etc.) — Unidad 3
 
 # --- NANOTECHNOLOGY & PHYSICS ---
 ase>=3.22.0               # Atomic Simulation Environment (Unidades 1-2)
 mendeleev>=0.9.0          # Propiedades de elementos químicos
 networkx>=3.0             # Graph theory para estructuras moleculares
+mp_api>=0.46.0            # Materials Project API (Unidad 4)
+
+# --- COMPUTER VISION & IMAGE ANALYSIS ---
+scikit-image>=0.21.0      # Procesamiento de imágenes (Unidad 4 — Microscopía)
+
+# --- DEEP LEARNING ---
+# tensorflow — solo necesario si se activa el entrenamiento real de U-Net.
+# El código de Unidad 4 usa numpy-only U-Net (sin GPU requerida).
+# Instalar manualmente si se necesita: pip install tensorflow>=2.13.0,<2.17.0
+# NOTA Windows: requiere Microsoft C++ Redistributable 2019 x64.
 
 # --- VISUALIZATION ---
 pydot>=1.4.2
@@ -28,20 +41,53 @@ graphviz>=0.20.0
 plotly>=5.14.0            # Visualizaciones interactivas
 
 # --- AGENTIC AI & LLM FRAMEWORKS (Unidad 5) ---
-crewai>=0.1.0             # Framework multi-agente
-langgraph>=0.0.20         # Grafos de agentes con LangChain
-langchain>=0.1.0          # Framework LLM
-langchain-core>=0.1.0     # Core de LangChain
-langchain-google-genai>=0.0.6  # Integración con Google Gemini
+crewai>=0.80.0            # Framework multi-agente
 crewai-tools>=0.1.0       # Herramientas para CrewAI
+langgraph>=0.2.0          # Grafos de agentes con LangChain
+langgraph-checkpoint-sqlite>=2.0.6  # SqliteSaver para persistencia entre sesiones
+langchain>=0.3.0          # Framework LLM
+langchain-core>=0.3.0     # Core de LangChain
+langchain-community>=0.3.0     # Integraciones de la comunidad LangChain
+google-adk>=1.0.0         # Google Agent Development Kit (ADK) + protocolo A2A
+smolagents>=1.24.0        # Agentes ligeros HuggingFace (Unidad 5)
+ddgs>=9.12.0              # DuckDuckGo search — requerido por DuckDuckGoSearchTool
+nest_asyncio>=1.6.0       # Permite asyncio.run() dentro de Jupyter
+
+# --- LLM PROVIDERS (Unidad 5) ---
+langchain-openai>=0.3.0        # Integracion LangChain-OpenAI
+langchain-google-genai>=2.0.0  # Integracion con Google Gemini
+langchain-anthropic>=0.3.0     # Integracion con Anthropic Claude
+openai>=1.60.0            # Cliente OpenAI (tambien para OpenRouter via base_url)
+google-generativeai>=0.8.0     # SDK directo Google Gemini (sub_agents ADK)
+litellm>=1.50.0           # Router unificado de LLMs (OpenRouter, etc.)
+langsmith>=0.3.0          # Observabilidad y tracing de agentes (opcional)
+
+# --- RAG & MEMORIA (Unidad 5) ---
+chromadb>=0.6.0           # Base de datos vectorial local
+sentence-transformers>=3.4.0   # Embeddings locales para RAG
+mem0ai>=0.1.0             # Memoria persistente para agentes
+
+# --- TECNOLOGIAS DE GRAFO (Unidades 5-6) ---
+kuzu>=0.7.0               # Base de datos de grafos embebida (sin servidor)
+neo4j>=5.28.0             # Cliente Neo4j para GraphRAG con graphiti-core
+graphiti-core>=0.3.0      # Memoria episodica en grafo (requiere Neo4j)
+graphrag>=2.0.0           # GraphRAG de Microsoft
+pyvis>=0.3.0              # Visualizacion interactiva de grafos
+
+# --- APIs & PRODUCCION (Unidad 6) ---
+fastapi>=0.115.0          # Framework web para APIs REST
+uvicorn>=0.34.0           # Servidor ASGI para FastAPI
+pydantic>=2.10.0          # Validacion de datos con tipos Python
+httpx>=0.28.0             # Cliente HTTP asincrono
+tenacity>=9.0.0           # Reintentos con backoff exponencial
 
 # --- DATA PROCESSING & OPTIMIZATION ---
-dask[complete]>=2023.0.0  # Computación paralela (Unidad 7)
-joblib>=1.3.0             # Paralelización de tareas
+joblib>=1.3.0             # Paralelizacion de tareas
 
-# --- TESTING & DEVELOPMENT (Unidad 7) ---
-pytest>=7.4.0             # Framework de testing
+# --- TESTING & DEVELOPMENT ---
+pytest>=9.0.0             # Framework de testing
 pytest-cov>=4.1.0         # Cobertura de tests
+pytest-asyncio>=0.25.0    # Soporte async para pytest
 
 # --- JUPYTER & NOTEBOOK ---
 notebook>=7.0.0
@@ -59,17 +105,23 @@ pyyaml>=6.0               # Lectura de archivos YAML
 # torch-cuda                # PyTorch con soporte CUDA
 
 # =============================================================================
-# NOTAS DE INSTALACIÓN:
-# 
-# 1. Instalación básica (sin frameworks agentic):
-#    pip install -r requirements.txt --no-deps crewai langgraph langchain
+# NOTAS DE INSTALACION:
 #
-# 2. Instalación completa (con frameworks agentic):
+# 1. Instalacion con conda (recomendado, incluye ASE, RDKit, OpenMM):
+#    conda env create -f environment.yml
+#    conda activate ia_nano
+#
+# 2. Instalacion solo pip (sin paquetes conda-only):
 #    pip install -r requirements.txt
 #
-# 3. Para usar Google Gemini en Unidad 5, necesitas:
-#    - Configurar GOOGLE_API_KEY en .env
-#    - pip install langchain-google-genai
+# 3. Variables de entorno necesarias (crear archivo .env en raiz del repo):
+#    OPENROUTER_API_KEY=sk-or-v1-...   # OpenRouter — acceso a todos los modelos
+#    GOOGLE_API_KEY=AIzaSy-...         # Gemini nativo (requerido para sub_agents ADK)
+#    LANGSMITH_API_KEY=lsv2_...        # Observabilidad LangSmith (opcional)
 #
-# 4. ASE puede requerir compiladores C/C++ en algunos sistemas
-# =============================================================================
+# 4. Neo4j (para graphiti-core y GraphRAG) requiere Docker:
+#    docker run --name neo4j -p 7474:7474 -p 7687:7687 \
+#      -e NEO4J_AUTH=neo4j/password neo4j
+#
+# 5. ASE puede requerir compiladores C/C++ en algunos sistemas.
+# ============================================================================= 

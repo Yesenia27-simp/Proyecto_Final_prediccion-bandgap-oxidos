@@ -1,26 +1,27 @@
 # Antigravity Nano Research Multiagentic Core
 
+[![CI](https://github.com/Multiagent-AI-Lab/Antigravity-Nano-Research-Multiagentic-Core/actions/workflows/ci.yml/badge.svg)](https://github.com/Multiagent-AI-Lab/Antigravity-Nano-Research-Multiagentic-Core/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://multiagent-ai-lab.github.io/Antigravity-Nano-Research-Multiagentic-Core/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Requires Antigravity](https://img.shields.io/badge/Requires-Antigravity-purple.svg)](https://github.com/google-deepmind/antigravity)
+[![Built with Antigravity](https://img.shields.io/badge/Built%20with-Antigravity-purple.svg)](https://github.com/google-deepmind/antigravity)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-green.svg)](https://www.python.org/downloads/)
+[![Author](https://img.shields.io/badge/Author-ljyudico-blue.svg)](https://github.com/ljyudico)
 
-> **Sistema Multi-Agente para Investigación en Nanotecnología e Inteligencia Artificial**
+> **Curso de IA Aplicada a Investigación Científica y Tecnológica — Nanotecnología**
 
-Este repositorio contiene la infraestructura base para desarrollar **Investigación de Primer Nivel** en IA aplicada a Nanotecnología usando **Antigravity** como entorno de desarrollo multi-agente.
+Desarrollado por **[@ljyudico](https://github.com/ljyudico)** usando [Antigravity](https://github.com/google-deepmind/antigravity) como entorno de desarrollo multi-agente. Este repositorio contiene el material educativo completo (Unidades 1–6) para aprender IA aplicada a nanotecnología, desde simulación molecular hasta sistemas multi-agente y despliegue de modelos.
 
 ---
 
 ## 🚀 Quick Start (3 Pasos)
 
-> [!IMPORTANT]
-> **Requisito Previo**: Debes tener [Antigravity](https://github.com/google-deepmind/antigravity) instalado y configurado.
+> [!NOTE]
+> Este repositorio fue desarrollado usando [Antigravity](https://github.com/google-deepmind/antigravity) como entorno de trabajo. **No necesitas Antigravity** para ejecutar los notebooks — solo conda y las dependencias del entorno `ia_nano`.
 
 ### 1. Clonar el Repositorio
 
-Desde Antigravity, navega a tu directorio de proyectos y clona:
-
 ```bash
-git clone https://github.com/ljyudico/Antigravity-Nano-Research-Multiagentic-Core.git
+git clone https://github.com/Multiagent-AI-Lab/Antigravity-Nano-Research-Multiagentic-Core.git
 cd Antigravity-Nano-Research-Multiagentic-Core
 ```
 
@@ -30,7 +31,6 @@ cd Antigravity-Nano-Research-Multiagentic-Core
 ```batch
 setup.bat
 ```
-*(Si no tienes Conda, el script lo descargará e instalará automáticamente)*
 
 **Linux/macOS**:
 ```bash
@@ -39,7 +39,6 @@ chmod +x setup.sh
 ```
 
 Este script:
-- ✅ **Instala Miniconda** (si no existe)
 - ✅ Crea el ambiente conda `ia_nano` (Python 3.11)
 - ✅ Instala todas las dependencias científicas (ASE, RDKit, OpenMM)
 - ✅ Registra el kernel Jupyter
@@ -91,13 +90,13 @@ flowchart LR
 
 ### Obligatorios
 
-- **[Antigravity](https://github.com/google-deepmind/antigravity)** - Entorno de desarrollo multi-agente
 - **Python 3.11** - [¿Por qué 3.11?](#por-qué-python-311)
 - **Conda/Miniconda** - Gestor de ambientes
 - **Git** - Control de versiones
 
 ### Opcionales
 
+- **[Antigravity](https://github.com/google-deepmind/antigravity)** - Entorno multi-agente usado durante el desarrollo (no requerido para ejecutar los notebooks)
 - **Node.js** - Para MCP servers (Materials Project integration)
 - **CUDA** - Para aceleración GPU en OpenMM
 
@@ -144,13 +143,38 @@ Este repositorio incluye **material educativo estructurado** para aprender IA ap
 - Análisis estructural (RDF, coordinación)
 - **[📓 Ir a la Unidad 1](educational_content/unit_01_nanoscale_modeling/)**
 
-### 🚧 Próximas Unidades
-- Unidad 2: Simulación Molecular Avanzada (MD, DFT)
-- Unidad 3: Machine Learning para Nanomateriales
-- Unidad 4: IA Aplicada a Datos Experimentales
-- Unidad 5: Sistemas Multi-Agente
-- Unidad 6: Proyecto de Integración
-- Unidad 7: Computación Científica Profesional
+### ✅ Unidad 2: Simulación Molecular Avanzada (2 notebooks)
+- Dinámica Molecular (MD) con diferentes potenciales
+- Teoría del Funcional de la Densidad (DFT)
+- Optimización de estructuras y propiedades electrónicas
+- Nanofabricación computacional
+- **[📓 Ir a la Unidad 2](educational_content/unit_02_molecular_simulation/)**
+
+### ✅ Unidad 3: Machine Learning para Nanomateriales (4 notebooks)
+- Algoritmos clásicos (Random Forest, SVM, regresión, Gradient Boosting)
+- Redes neuronales profundas en PyTorch (backpropagación simbólica, GCN)
+- Transfer Learning, Knowledge Distillation, Reinforcement Learning (DQN)
+- Feature engineering y descriptores moleculares
+- **[📓 Ir a la Unidad 3](educational_content/unit_03_ml_nanomaterials/)**
+
+### ✅ Unidad 4: IA Aplicada a Nanotecnología (2 notebooks)
+- LLMs y Generative AI para ciencia de materiales (Materials Project API)
+- Computer Vision para microscopía SEM/TEM
+- Análisis espectroscópico y series temporales con IA
+- Optimización bayesiana y algoritmos evolutivos
+- **[📓 Ir a la Unidad 4](educational_content/unit_04_applied_ai/)**
+
+### ✅ Unidad 5: Sistemas Multi-Agente (9 notebooks)
+- LangChain, LangGraph, CrewAI, Google ADK 1.0 + protocolo A2A
+- RAG, GraphRAG, Mem0, ChromaDB
+- Producción: FastAPI, observabilidad, model routing multi-proveedor
+- **[📓 Ir a la Unidad 5](educational_content/unit_05_multi_agent_sys/)**
+
+### ✅ Unidad 6: Proyecto Integrador (6 notebooks)
+- Pipeline de proyecto científico end-to-end (propuesta → implementación → despliegue → evaluación)
+- FastAPI template (`mi_proyecto_api/`) con Dockerfile listo para adaptar
+- Scaffolding guiado: JSON de propuesta, plan técnico y reporte final
+- **[📓 Ir a la Unidad 6](educational_content/unit_06_integration_project/)**
 
 **[📚 Ver todo el contenido educativo](educational_content/)**
 

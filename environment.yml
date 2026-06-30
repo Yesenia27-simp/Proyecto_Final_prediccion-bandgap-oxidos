@@ -18,3 +18,60 @@ dependencies:
   - openmm
   - mendeleev
   - pip
+  - sympy
+  - networkx
+  - plotly
+  - ipywidgets
+  - tqdm
+  - python-dotenv
+  - pip:
+    - scikit-learn>=1.3.0,<2.0.0
+    - scikit-image>=0.21.0      # Unidad 4: procesamiento microscopía SEM/TEM
+    - mp_api>=0.46.0            # Unidad 4: Materials Project API
+    - pycaret>=3.3.0
+    - torch>=2.0.0
+    - torchvision>=0.15.0
+    - torchaudio>=2.0.0
+    - gymnasium>=0.29.0
+    - joblib>=1.3.0,<2.0.0
+    # --- Unidad 5: Frameworks Agenticos ---
+    - crewai>=0.80.0
+    - crewai-tools>=0.1.0
+    - langgraph>=0.2.0
+    - langgraph-checkpoint-sqlite>=2.0.6
+    - langchain>=0.3.0
+    - langchain-core>=0.3.0
+    - langchain-community>=0.3.0
+    - google-adk>=1.0.0
+    - smolagents>=1.24.0
+    - ddgs>=9.12.0
+    - nest_asyncio>=1.6.0
+    # --- Unidad 5: LLM Providers ---
+    - langchain-openai>=0.3.0
+    - langchain-google-genai>=2.0.0
+    - langchain-anthropic>=0.3.0
+    - openai>=1.60.0
+    - google-generativeai>=0.8.0
+    - litellm>=1.50.0
+    - langsmith>=0.3.0
+    # --- Unidad 5: RAG y Memoria ---
+    - chromadb>=0.6.0
+    - sentence-transformers>=3.4.0
+    - mem0ai>=0.1.0
+    # --- Unidades 5-6: Tecnologias de Grafo ---
+    - kuzu>=0.7.0
+    - neo4j>=5.28.0
+    - graphiti-core>=0.3.0
+    - graphrag>=2.0.0
+    - pyvis>=0.3.0
+    # --- Unidad 6: APIs y Produccion ---
+    - fastapi>=0.115.0
+    - uvicorn>=0.34.0
+    - pydantic>=2.10.0
+    - httpx>=0.28.0
+    - tenacity>=9.0.0
+    # --- Testing ---
+    - pytest>=9.0.2
+    - pytest-asyncio>=0.25.0
+    # NOTA: Neo4j requiere Docker Desktop (instalacion de sistema, no pip).
+    # docker run --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "antigravity-nano-research"
+version = "1.0.0"
+description = "Multi-agent AI system for nanomaterials research and education"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "ljyudico" }]
+dependencies = [
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+]
+
+[project.optional-dependencies]
+full = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "matplotlib>=3.7.0",
+    "torch>=2.0.0",
+    "ase>=3.22.0",
+    "langchain>=0.3.0",
+    "crewai>=0.80.0",
+    "google-adk>=1.0.0",
+    "chromadb>=0.6.0",
+    "sentence-transformers>=3.4.0",
+    "fastapi>=0.115.0",
+    "pydantic>=2.0.0",
+]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-asyncio>=0.25.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["external_skills*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
