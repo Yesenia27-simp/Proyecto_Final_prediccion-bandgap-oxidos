@@ -1,0 +1,10 @@
+Parámetro,Tipo,Cobertura final,Ciclos hasta 90%,E media final (eV/át.)
+F = 0.01,Tasa dep.,1.000,89,-2.400
+F = 0.05,Tasa dep.,1.000,17,-2.400
+F = 0.2,Tasa dep.,1.000,4,-2.400
+T = 300 K,Temperatura,1.000,17,-2.400
+T = 500 K,Temperatura,1.000,17,-2.400
+T = 700 K,Temperatura,1.000,17,-2.400
+Eb = 0.3 eV,Energía enlace,1.000,17,-1.200
+Eb = 0.6 eV,Energía enlace,1.000,17,-2.400
+Eb = 1.0 eV,Energía enlace,1.000,17,-4.000

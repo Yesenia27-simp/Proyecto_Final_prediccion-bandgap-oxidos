@@ -1,104 +1,228 @@
-# GOVERNANCE.md
+# Antigravity Nano Research Multiagentic Core
 
-## 1. Misión del Consejo de Expertos
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Requires Antigravity](https://img.shields.io/badge/Requires-Antigravity-purple.svg)](https://github.com/google-deepmind/antigravity)
+[![Python 3.11](https://img.shields.io/badge/Python-3.11-green.svg)](https://www.python.org/downloads/)
 
-El objetivo primordial de este proyecto es el **Desarrollo de Inteligencia Artificial aplicada a la Nanotecnología** bajo tres pilares inquebrantables:
+> **Sistema Multi-Agente para Investigación en Nanotecnología e Inteligencia Artificial**
 
-1.  **Rigor de Investigación**: Fundamentación teórica alineada con estándares de investigación de primer nivel para publicaciones científicas.
-2.  **Excelencia Didáctica**: Claridad en la transmisión del conocimiento para formar a la próxima generación de científicos, desde licenciatura hasta posgrado.
-3.  **Exactitud Científica Integrada**: Precisión absoluta en el modelado físico, síntesis química y formulación matemática para garantizar simulaciones realistas.
-
----
-
-## 2. El Consejo de Expertos (Pipeline Optimizado)
-
-Cada agente opera utilizando un set específico de competencias de la *Master Library* y las **External Skills** (`external_skills/`).
-
-### 🏗️ Lead Architect (@Architect)
-*   **Responsabilidad**: Guardián de la estructura del proyecto, la memoria (`project_memory.md`) y la coherencia global.
-*   **Skills Activas**: `senior-architect`, `agent-memory-systems`, `mermaid-expert`.
-*   **Posición en Pipeline**: Inicio (Fase de Diseño).
-
-### 🔬 Senior Researcher (@Scientist)
-*   **Responsabilidad**: **Dueño de la Teoría**. Responsable de los Componentes 1, 2, 4, 5 y 8b (Diccionarios). Notación LaTeX perfecta.
-*   **Skills Activas**: `claude-scientific-skills`, `research-engineer`, `writing-skills`.
-*   **Posición en Pipeline**: Fase de Fundamentación.
-*   **Loop de Retroalimentación**: Recibe ajustes de @Librarian si los resultados son irrealistas.
-
-### ⚙️ Simulation Engineer (@Engineer)
-*   **Responsabilidad**: **Constructor del Código**. Responsable de los Componentes 3 (Verificación), 6 (Solución Computacional) y 7 (Gráficos).
-*   **Skills Activas**: `python-pro`, `environment-setup-guide`, `ml-pipeline-workflow`.
-*   **Posición en Pipeline**: Fase de Implementación.
-*   **Loop de Retroalimentación**: Recibe correcciones de @Safety_Gate y @QA.
-
-### 🛡️ Safety Gate (@Safety_Gate) **[CONSOLIDADO]**
-*   **Responsabilidad**: **Guardián de la Seguridad y Pedagogía**. Fusiona las funciones de:
-    *   @Sim_Validator (Validación numérica)
-    *   @Bio_Safety (Toxicología)
-    *   @Prof_Socrates (Feedback pedagógico)
-*   **External Skills Utilizadas**:
-    *   `external_skills.numerical.stability_guardian` - Verifica timesteps y energía.
-    *   `external_skills.ai_mining.toxicity_predictor` - Detecta estructuras peligrosas.
-    *   `external_skills.pedagogy.socratic_debugger` - Genera preguntas en caso de error.
-*   **Salida**:
-    *   ✅ Si todo es seguro: pasa a @Analyst.
-    *   ❌ Si hay error: activa modo Socrático y devuelve a @Engineer.
-*   **Posición en Pipeline**: Checkpoint de Seguridad (Loop L1).
-
-### 📊 Data Analyst (@Analyst) **[CONSOLIDADO]**
-*   **Responsabilidad**: **Análisis Profundo + Visualización**. Fusiona:
-    *   @Data_Miner (Extracción de features)
-    *   @Analyst original (Gráficos)
-*   **Skills Activas**: `data-storytelling`, `matplotlib-expert`.
-*   **External Skills Utilizadas**:
-    *   `external_skills.ai_mining.descriptor_miner` - Extrae features con Matminer.
-*   **Responsable de**: Componente 8a (Interpretación ≥ 150 palabras post-gráfico).
-*   **Posición en Pipeline**: Fase de Análisis.
-
-### 📚 The Librarian (@Librarian)
-*   **Responsabilidad**: **Validación Experimental**. Compara resultados de simulación con datos reales.
-*   **External Skills Utilizadas**:
-    *   `external_skills.orchestration.librarian_rag` - Consulta Materials Project API.
-*   **Salida**: Tablas Markdown comparativas (Simulación vs Experimento).
-*   **Posición en Pipeline**: Fase de Validación de Verdad (Loop L2).
-
-### ✅ Quality Auditor (@QA)
-*   **Responsabilidad**: **Auditor Supremo**. Verifica el cumplimiento estricto de los 8 Componentes Obligatorios y el `PROTOCOLO_MAESTRO.md`.
-*   **Skills Activas**: `systematic-debugging`, `code-review-excellence`.
-*   **Posición en Pipeline**: Checkpoint Final (Loop L3).
+Este repositorio contiene la infraestructura base para desarrollar **Investigación de Primer Nivel** en IA aplicada a Nanotecnología usando **Antigravity** como entorno de desarrollo multi-agente.
 
 ---
 
-## 3. Mapeo de Skills Externas
+## 🚀 Quick Start (3 Pasos)
 
-| Skill Externa | Agente Consumidor | Propósito |
-|:---|:---|:---|
-| `numerical/stability_guardian.py` | @Safety_Gate | Validar timesteps MD |
-| `numerical/basis_set_architect.py` | @Safety_Gate | Recomendar bases DFT |
-| `ai_mining/toxicity_predictor.py` | @Safety_Gate | Detectar toxicidad |
-| `pedagogy/socratic_debugger.py` | @Safety_Gate | Feedback pedagógico |
-| `ai_mining/descriptor_miner.py` | @Analyst | Extracción de features |
-| `orchestration/librarian_rag.py` | @Librarian | Validación experimental |
+> [!IMPORTANT]
+> **Requisito Previo**: Debes tener [Antigravity](https://github.com/google-deepmind/antigravity) instalado y configurado.
+
+### 1. Clonar el Repositorio
+
+Desde Antigravity, navega a tu directorio de proyectos y clona:
+
+```bash
+git clone https://github.com/ljyudico/Antigravity-Nano-Research-Multiagentic-Core.git
+cd Antigravity-Nano-Research-Multiagentic-Core
+```
+
+### 2. Ejecutar Setup Automático
+
+**Windows**:
+```batch
+setup.bat
+```
+*(Si no tienes Conda, el script lo descargará e instalará automáticamente)*
+
+**Linux/macOS**:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+Este script:
+- ✅ **Instala Miniconda** (si no existe)
+- ✅ Crea el ambiente conda `ia_nano` (Python 3.11)
+- ✅ Instala todas las dependencias científicas (ASE, RDKit, OpenMM)
+- ✅ Registra el kernel Jupyter
+- ✅ Verifica la instalación
+
+### 3. Activar el Consejo de Expertos
+
+```bash
+conda activate ia_nano
+jupyter lab
+```
+
+Ahora puedes trabajar con el sistema multi-agente exactamente como se usa en este proyecto.
 
 ---
 
-## 4. The Gold Standard
+## 🏗️ Arquitectura del Sistema
 
-### Definición de "Calidad":
-1.  **Explicaciones Claras**: Cada concepto introduce el "por qué" antes del "cómo".
-2.  **Código Documentado**: Comentarios tipo "Master Class" que explican la física detrás del algoritmo.
-3.  **Matemáticas Impecables**: Uso estricto de LaTeX ($\LaTeX$) para todas las variables, unidades y ecuaciones, tanto display ($$..$$) como inline ($..$).
+Este proyecto implementa un **Consejo de 7 Expertos** especializados:
+
+```mermaid
+flowchart LR
+    A["@Architect<br/>Diseño"] --> B["@Scientist<br/>Teoría"]
+    B --> C["@Engineer<br/>Código"]
+    C --> D["@Safety_Gate<br/>Validación"]
+    D -->|"✓ Safe"| E["@Analyst<br/>Análisis"]
+    D -->|"✗ Error"| C
+    E --> F["@Librarian<br/>Validación Experimental"]
+    F --> G["@QA<br/>Auditoría"]
+    G -->|"✓ Pass"| H["Publicar"]
+    G -->|"✗ Fallo"| B
+```
+
+### Agentes y sus Roles
+
+| Agente | Responsabilidad | External Skills |
+|--------|----------------|-----------------|
+| **@Architect** | Guardián de la estructura y memoria del proyecto | `senior-architect`, `agent-memory-systems` |
+| **@Scientist** | Dueño de la teoría, notación LaTeX perfecta | `claude-scientific-skills`, `research-engineer` |
+| **@Engineer** | Constructor del código, implementación | `python-pro`, `ml-pipeline-workflow` |
+| **@Safety_Gate** | Validación numérica, toxicología, pedagogía | `stability_guardian`, `toxicity_predictor`, `socratic_debugger` |
+| **@Analyst** | Análisis profundo y visualización | `data-storytelling`, `descriptor_miner` |
+| **@Librarian** | Validación experimental (Materials Project) | `librarian_rag` |
+| **@QA** | Auditor supremo de calidad | `systematic-debugging`, `code-review-excellence` |
 
 ---
 
-## 5. Justificación Técnica: Python 3.11
+## 📦 Requisitos del Sistema
 
-**Por qué elegimos Python 3.11 para Nanotecnología e IA:**
+### Obligatorios
 
-En el ecosistema científico, la **estabilidad** es tan crítica como el rendimiento. Hemos estandarizado el uso de **Python 3.11** en el entorno `ia_nano` por las siguientes razones técnicas y pedagógicas:
+- **[Antigravity](https://github.com/google-deepmind/antigravity)** - Entorno de desarrollo multi-agente
+- **Python 3.11** - [¿Por qué 3.11?](#por-qué-python-311)
+- **Conda/Miniconda** - Gestor de ambientes
+- **Git** - Control de versiones
 
-1.  **Compatibilidad Crítica**: Librerías fundamentales en quimioinformática y simulación molecular como `RDKit`, `ASE` y `OpenMM` tienen soporte nativo y extremadamente estable en 3.11.
-2.  **Rendimiento vs. Estabilidad**: Python 3.11 introdujo mejoras significativas de velocidad (Specializing Adaptive Interpreter) respecto a 3.10.
-3.  **Reproducibilidad**: Al fijar esta versión, garantizamos que los notebooks sean ejecutables por estudiantes e investigadores en cualquier sistema operativo sin "infiernos de dependencias".
+### Opcionales
 
-> *Firmado: The Council of Experts (7 Agentes Optimizados)*
+- **Node.js** - Para MCP servers (Materials Project integration)
+- **CUDA** - Para aceleración GPU en OpenMM
+
+---
+
+## 📚 Documentación
+
+- **[GOVERNANCE.md](GOVERNANCE.md)** - Roles del Consejo de Expertos y pipeline de trabajo
+- **[INSTALL.md](INSTALL.md)** - Guía detallada de instalación y troubleshooting
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Cómo contribuir al proyecto
+- **[SKILLS_ATTRIBUTION.md](SKILLS_ATTRIBUTION.md)** - Créditos y origen de las skills externas
+
+---
+
+## 🧬 External Skills
+
+Este proyecto incluye **skills modulares** desarrolladas específicamente para validación científica:
+
+### Numerical Skills
+- `stability_guardian.py` - Validador de timesteps para MD
+- `basis_set_architect.py` - Recomendador de bases Gaussianas para DFT
+
+### AI Mining Skills
+- `toxicity_predictor.py` - Predictor de toxicidad molecular
+
+### Pedagogy Skills
+- `socratic_debugger.py` - Generador de feedback pedagógico
+
+### Orchestration Skills
+- `librarian_rag.py` - RAG para validación experimental
+
+Ver [SKILLS_ATTRIBUTION.md](SKILLS_ATTRIBUTION.md) para detalles completos.
+
+---
+
+## 📖 Contenido Educativo
+
+Este repositorio incluye **material educativo estructurado** para aprender IA aplicada a Nanotecnología:
+
+### ✅ Unidad 1: Modelado a Nanoescala
+- Fundamentos de simulación molecular
+- Atomic Simulation Environment (ASE)
+- Optimización de nanopartículas de oro
+- Análisis estructural (RDF, coordinación)
+- **[📓 Ir a la Unidad 1](educational_content/unit_01_nanoscale_modeling/)**
+
+### 🚧 Próximas Unidades
+- Unidad 2: Simulación Molecular Avanzada (MD, DFT)
+- Unidad 3: Machine Learning para Nanomateriales
+- Unidad 4: IA Aplicada a Datos Experimentales
+- Unidad 5: Sistemas Multi-Agente
+- Unidad 6: Proyecto de Integración
+- Unidad 7: Computación Científica Profesional
+
+**[📚 Ver todo el contenido educativo](educational_content/)**
+
+---
+
+## 📚 Documentación
+
+- **[GOVERNANCE.md](GOVERNANCE.md)** - Roles del Consejo de Expertos y pipeline de trabajo
+- **[INSTALL.md](INSTALL.md)** - Guía detallada de instalación y troubleshooting
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Cómo contribuir al proyecto
+- **[SKILLS_ATTRIBUTION.md](SKILLS_ATTRIBUTION.md)** - Créditos y origen de las skills externas
+
+---
+
+## ❓ Por qué Python 3.11?
+
+En el ecosistema científico, la **estabilidad** es tan crítica como el rendimiento:
+
+1. **Compatibilidad Crítica**: Librerías fundamentales como `RDKit`, `ASE` y `OpenMM` tienen soporte nativo extremadamente estable en 3.11
+2. **Rendimiento vs. Estabilidad**: Python 3.11 introdujo mejoras significativas de velocidad (Specializing Adaptive Interpreter) respecto a 3.10
+3. **Reproducibilidad**: Al fijar esta versión, garantizamos que los notebooks sean ejecutables por estudiantes e investigadores en cualquier sistema operativo sin "infiernos de dependencias"
+
+| Librería | Python 3.10 | Python 3.11 | Python 3.12 |
+|----------|-------------|-------------|-------------|
+| RDKit    | ✓ Estable   | ✓✓ Óptimo   | ⚠️ Beta      |
+| ASE      | ✓           | ✓✓          | ✓           |
+| OpenMM   | ✓           | ✓✓          | ❌          |
+
+---
+
+## 🤝 Contribuciones
+
+¡Las contribuciones son bienvenidas! Por favor lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar un Pull Request.
+
+### Áreas de Contribución
+
+- 🔬 Nuevas skills para validación científica
+- 📊 Mejoras en visualización de datos
+- 🧪 Casos de prueba adicionales
+- 📖 Documentación y tutoriales
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia **Apache-2.0**. Ver [LICENSE](LICENSE) para más detalles.
+
+La licencia Apache-2.0 permite:
+- ✅ Uso comercial
+- ✅ Modificación
+- ✅ Distribución
+- ✅ Uso de patentes
+- ⚠️ Requiere: Atribución y aviso de licencia
+
+---
+
+## 🔗 Enlaces Útiles
+
+- [Antigravity Documentation](https://github.com/google-deepmind/antigravity)
+- [Materials Project](https://materialsproject.org/)
+- [ASE Documentation](https://wiki.fysik.dtu.dk/ase/)
+- [RDKit Documentation](https://www.rdkit.org/docs/)
+
+---
+
+## 📧 Contacto
+
+**Mantenedor**: ljyudico  
+**GitHub**: [@ljyudico](https://github.com/ljyudico)
+
+---
+
+<div align="center">
+  <sub>Desarrollado con ❤️ usando Antigravity para la investigación en Nanotecnología e IA</sub>
+</div>
