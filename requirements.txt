@@ -41,8 +41,7 @@ graphviz>=0.20.0
 plotly>=5.14.0            # Visualizaciones interactivas
 
 # --- AGENTIC AI & LLM FRAMEWORKS (Unidad 5) ---
-crewai>=0.80.0            # Framework multi-agente
-crewai-tools>=0.1.0       # Herramientas para CrewAI
+      # Herramientas para CrewAI
 langgraph>=0.2.0          # Grafos de agentes con LangChain
 langgraph-checkpoint-sqlite>=2.0.6  # SqliteSaver para persistencia entre sesiones
 langchain>=0.3.0          # Framework LLM
