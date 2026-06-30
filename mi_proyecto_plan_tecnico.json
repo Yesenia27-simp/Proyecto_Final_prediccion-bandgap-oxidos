@@ -1,0 +1,50 @@
+import nbformat
+import sys
+import argparse
+from pathlib import Path
+
+def inject_cell(notebook_path, source_file):
+    print(f"Leyendo código fuente desde: {source_file}")
+    with open(source_file, "r", encoding="utf-8") as f:
+        code_content = f.read()
+
+    print(f"Leyendo notebook: {notebook_path}")
+    try:
+        nb = nbformat.read(notebook_path, as_version=4)
+    except FileNotFoundError:
+        print(f"Error: No se encontro el notebook {notebook_path}")
+        sys.exit(1)
+
+    print(f"Celdas actuales: {len(nb.cells)}")
+    
+    # Crear celda de markdown
+    md_source = (
+        "## Ejercicio de Extensión — LangGraph: Sistema de Generación de Reportes Ecotoxicológicos\n\n"
+        "Este ejercicio construye un sistema con **LangGraph** y **SQLite** que incluye:\n"
+        "1. Nodo de análisis de tema.\n"
+        "2. Nodo de búsqueda (Mock DB).\n"
+        "3. Nodo de redacción.\n"
+        "4. Nodo evaluador automático (Ciclo de corrección max 2 intentos).\n"
+        "5. Checkpointing con SQLite.\n"
+        "6. Human-in-the-loop (Aprobación humana antes de la publicación)."
+    )
+    md_cell = nbformat.v4.new_markdown_cell(source=md_source)
+    
+    # Crear celda de código
+    code_cell = nbformat.v4.new_code_cell(source=code_content)
+    
+    nb.cells.extend([md_cell, code_cell])
+    
+    nbformat.write(nb, notebook_path)
+    
+    print(f"\nNotebook actualizado correctamente.")
+    print(f"  Celdas totales: {len(nb.cells)}")
+    print(f"  Se agregaron 2 celdas (markdown y código) a {notebook_path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--notebook", default="U5_02_LANGCHAIN_AVANZADO_LANGGRAPH.ipynb")
+    parser.add_argument("--source", default="_langgraph_ecotox_source.py")
+    args = parser.parse_args()
+    
+    inject_cell(args.notebook, args.source)

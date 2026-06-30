@@ -1,0 +1,159 @@
+import os
+from crewai import Agent, Task, Crew, Process
+from crewai.tools import tool
+from langchain_google_genai import ChatGoogleGenerativeAI
+from textwrap import dedent
+
+# Inicializar LLM (gemini-1.5-flash para rapidez)
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
+
+# ==============================================================================
+# 1. Definición de Herramientas (Tools) 
+# ==============================================================================
+@tool("Calculadora de Propiedades")
+def calcular_propiedades(nanomaterial: str) -> str:
+    """Calcula propiedades fisicoquímicas estimadas de un nanomaterial."""
+    if "plata" in nanomaterial.lower() or "agnp" in nanomaterial.lower():
+        return (
+            "Material: Nanopartículas de Plata (AgNPs) | "
+            "Propiedad principal: Antimicrobiano de amplio espectro | "
+            "Toxicidad acuática: Alta (Riesgo ecotoxicológico) | "
+            "Costo síntesis: Medio-Alto"
+        )
+    return "Material Desconocido | Viabilidad: Pendiente de validación."
+
+# ==============================================================================
+# 2. Definición de Agentes (con backstories ajustados para alto score)
+# ==============================================================================
+cientifico = Agent(
+    role="Científico Jefe de Materiales",
+    goal="Validar la viabilidad técnica y extraer propiedades fisicoquímicas del material.",
+    backstory=dedent("""
+        Tienes un Ph.D. en Nanotecnología con 15 años de experiencia.
+        Eres increíblemente preciso y te basas en datos científicos puros. 
+        Analizas si el material es técnicamente escalable e informas de las propiedades esenciales.
+    """),
+    tools=[calcular_propiedades],
+    verbose=True,
+    allow_delegation=False,
+    llm=llm
+)
+
+economista = Agent(
+    role="Analista Económico y de Mercado",
+    goal="Evaluar costos de producción, rentabilidad y demanda potencial en el mercado.",
+    backstory=dedent("""
+        Eres un gurú financiero especializado en capital de riesgo (VC) de Deep Tech.
+        Buscas rentabilidad (ROI) y modelos de negocio sostenibles. 
+        Evalúas cómo escalar la producción y si hay demanda hospitalaria.
+    """),
+    verbose=True,
+    allow_delegation=False,
+    llm=llm
+)
+
+regulatorio = Agent(
+    role="Experto en Cumplimiento Normativo y Ecotoxicología",
+    goal="Garantizar que el producto cumpla normas ambientales y de salud (REACH/EPA).",
+    backstory=dedent("""
+        Antiguo auditor de la EPA y experto en directrices OCDE.
+        Tu misión es identificar barreras legales, riesgos de toxicidad aguda y proponer 
+        un plan estricto de mitigación de impacto ambiental.
+    """),
+    verbose=True,
+    allow_delegation=False,
+    llm=llm
+)
+
+redactor_ejecutivo = Agent(
+    role="Redactor Ejecutivo de Negocios",
+    goal="Sintetizar hallazgos en un 'Executive Summary' de 1 página sumamente persuasivo.",
+    backstory=dedent("""
+        Tienes un MBA en Harvard y llevas años armando pitches para inversores.
+        Eres maestro en destilar jerga técnica, económica y regulatoria en una 
+        propuesta de valor cristalina y convincente.
+    """),
+    verbose=True,
+    allow_delegation=False,
+    llm=llm
+)
+
+# ==============================================================================
+# 3. Definición de Tareas
+# ==============================================================================
+tema_proyecto = "Comercialización de un recubrimiento antimicrobiano basado en Nanopartículas de Plata (AgNPs) para entornos hospitalarios"
+
+tarea_tecnica = Task(
+    description=f"Evalúa la viabilidad técnica de: {tema_proyecto}. Extrae propiedades usando la herramienta y define viabilidad de síntesis.",
+    expected_output="Informe de 1-2 párrafos sobre viabilidad técnica y propiedades principales.",
+    agent=cientifico
+)
+
+tarea_economica = Task(
+    description="Con el informe técnico, elabora un análisis de mercado: estima oportunidad económica en hospitales y costos relativos.",
+    expected_output="Análisis financiero simplificado y oportunidad de mercado.",
+    agent=economista
+)
+
+tarea_legal = Task(
+    description="Analiza riesgos ecotoxicológicos y barreras legales de las AgNPs. Propón un plan de mitigación sólido para inversores.",
+    expected_output="Resumen de barreras legales y estrategia de cumplimiento.",
+    agent=regulatorio
+)
+
+tarea_resumen = Task(
+    description="Integra el trabajo de los otros agentes en un 'Executive Summary' de 1 sola página. Hazlo persuasivo para buscar inversión (VC).",
+    expected_output="Un documento 'Executive Summary' persuasivo, estructurado en secciones claras, de 1 página.",
+    agent=redactor_ejecutivo
+)
+
+# ==============================================================================
+# 4. Ensamblar y Ejecutar el Crew
+# ==============================================================================
+crew_plan_negocio = Crew(
+    agents=[cientifico, economista, regulatorio, redactor_ejecutivo],
+    tasks=[tarea_tecnica, tarea_economica, tarea_legal, tarea_resumen],
+    process=Process.sequential,
+    verbose=True
+)
+
+print(f"--- INICIANDO GENERACIÓN DE PLAN DE NEGOCIOS: {tema_proyecto} ---\n")
+result = crew_plan_negocio.kickoff()
+
+texto_resultado = result.raw if hasattr(result, 'raw') else str(result)
+print("\n" + "="*70 + "\nRESULTADO FINAL (Executive Summary)\n" + "="*70)
+print(texto_resultado)
+
+# ==============================================================================
+# 5. Output Scorer Personalizado
+# ==============================================================================
+def output_scorer(reporte: str) -> float:
+    """Usa un LLM como Juez para calificar la salida de la Crew (0.0 a 1.0)."""
+    prompt_score = f"""
+    Eres un Inversor de Capital de Riesgo evaluando un 'Executive Summary'.
+    Evalúa el reporte bajo los siguientes 5 criterios (suman 1.00):
+    1. Base científica y técnica (0.20)
+    2. Viabilidad económica (0.20)
+    3. Mitigación regulatoria y ambiental (0.20)
+    4. Persuasión y claridad (0.20)
+    5. Formato de 1 página y coherencia global (0.20)
+    
+    Reporte a evaluar:
+    {reporte}
+    
+    Responde ÚNICAMENTE con un número flotante entre 0.00 y 1.00. (Ejemplo: 0.92)
+    """
+    try:
+        ans = llm.invoke(prompt_score).content.strip()
+        return float(ans)
+    except:
+        return 0.0
+
+score_final = output_scorer(texto_resultado)
+print("\n" + "="*70 + "\nEVALUACIÓN DEL OUTPUT SCORER\n" + "="*70)
+print(f"Score obtenido: {score_final:.2f} / 1.00")
+
+if score_final > 0.85:
+    print("✅ ¡Éxito! Las backstories de los agentes están óptimamente calibradas y han producido un reporte estelar.")
+else:
+    print("⚠️ Score bajo. Se sugiere iterar las backstories y roles para mayor precisión.")

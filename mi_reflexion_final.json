@@ -1,0 +1,180 @@
+import os
+import sys
+import sqlite3
+from typing import TypedDict
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.sqlite import SqliteSaver
+from IPython.display import Image, display
+
+# ============================================================
+# EJERCICIO DE LANGGRAPH — Sistema de Generación de Reportes
+# Dominio: Clasificación de nanomateriales por riesgo ecotoxicológico
+# ============================================================
+
+# 1. Definir la estructura del Estado
+class ReportState(TypedDict):
+    tema: str
+    info_buscada: str
+    reporte_borrador: str
+    revisiones: int
+    feedback: str
+    aprobado: bool
+    reporte_final: str
+
+# Inicializar LLM (usamos gemini-1.5-flash para rápidez y evitar cuotas)
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.1)
+
+# 2. Definir Nodos (Nodes)
+def analizar_tema(state: ReportState):
+    print("-> Nodo: Analizando Tema")
+    return {"tema": state["tema"]}
+
+def buscar_info(state: ReportState):
+    print("-> Nodo: Buscando Información (Mock)")
+    # Simulamos una búsqueda para el tema de ecotoxicología de nanomateriales
+    info = (
+        "INFO ENCONTRADA (MOCK DB):\n"
+        "- Los nanomateriales requieren evaluación específica debido a sus propiedades fisicoquímicas.\n"
+        "- Parámetros clave: área superficial, reactividad, potencial zeta y solubilidad.\n"
+        "- Normativas de referencia: Directrices OCDE 201 (Algas), 202 (Dafnias), 203 (Peces).\n"
+        "- El riesgo es particularmente crítico en nanopartículas de plata (AgNPs) y óxido de zinc (ZnO)."
+    )
+    return {"info_buscada": info}
+
+def redactar_reporte(state: ReportState):
+    rev = state.get("revisiones", 0)
+    print(f"-> Nodo: Redactando Reporte (Intento #{rev + 1})")
+    
+    feedback_previo = state.get("feedback", "")
+    instruccion_feedback = f"\nCorrige esto según el feedback: {feedback_previo}" if feedback_previo else ""
+    
+    prompt = f"""
+    Eres un experto en ecotoxicología de nanomateriales.
+    Redacta un reporte técnico CONCISO y estructurado sobre: {state['tema']}.
+    Basate estrictamente en esta información: {state['info_buscada']}
+    {instruccion_feedback}
+    """
+    
+    resp = llm.invoke([HumanMessage(content=prompt)])
+    return {"reporte_borrador": resp.content}
+
+def revisar_calidad(state: ReportState):
+    print("-> Nodo: Revisando Calidad")
+    rev = state.get("revisiones", 0)
+    
+    prompt = f"""
+    Evalúa la calidad del siguiente reporte sobre {state['tema']}:
+    {state['reporte_borrador']}
+    
+    ¿Es riguroso y menciona las directrices OCDE explícitamente?
+    Si está perfecto, responde únicamente 'APROBADO'.
+    Si le falta algo, responde 'FEEDBACK: [tu corrección]'.
+    """
+    resp = llm.invoke([HumanMessage(content=prompt)]).content
+    
+    if "APROBADO" in resp.upper():
+        print("   [Evaluador]: El reporte fue APROBADO por la revisión automática.")
+        return {"feedback": "", "revisiones": rev + 1}
+    else:
+        print(f"   [Evaluador]: Se requiere corrección. Feedback: {resp[:100]}...")
+        return {"feedback": resp, "revisiones": rev + 1}
+
+def aprobacion_humana(state: ReportState):
+    print("-> Nodo: Aprobación Humana (HITL)")
+    # Este nodo actúa como placeholder para la actualización de estado por el humano.
+    # El reporte borrador se convierte en el final si está aprobado.
+    return {"reporte_final": state["reporte_borrador"]}
+
+# 3. Definir Lógica de Enrutamiento (Conditional Edges)
+def ruta_revision(state: ReportState):
+    # Máximo 2 intentos de redacción
+    if state["feedback"] != "" and state["revisiones"] < 2:
+        return "redactar"
+    return "aprobacion"
+
+def ruta_publicacion(state: ReportState):
+    if state.get("aprobado", False):
+        return END
+    return "analizar" # Si rechaza el humano, vuelve a empezar (o se podría ir a redactar)
+
+# 4. Construir el Grafo
+workflow = StateGraph(ReportState)
+
+workflow.add_node("analizar", analizar_tema)
+workflow.add_node("buscar", buscar_info)
+workflow.add_node("redactar", redactar_reporte)
+workflow.add_node("revisar", revisar_calidad)
+workflow.add_node("aprobacion", aprobacion_humana)
+
+workflow.set_entry_point("analizar")
+workflow.add_edge("analizar", "buscar")
+workflow.add_edge("buscar", "redactar")
+workflow.add_edge("redactar", "revisar")
+
+# Bucle condicional de corrección
+workflow.add_conditional_edges(
+    "revisar", 
+    ruta_revision, 
+    {"redactar": "redactar", "aprobacion": "aprobacion"}
+)
+
+# Interacción Humana antes del fin
+workflow.add_conditional_edges(
+    "aprobacion", 
+    ruta_publicacion, 
+    {END: END, "analizar": "analizar"}
+)
+
+# 5. Configurar Checkpointing con SQLite
+db_path = "ecotox_checkpoints.sqlite"
+conn = sqlite3.connect(db_path, check_same_thread=False)
+memory = SqliteSaver(conn)
+
+# Compilar: Interrumpimos justo ANTES del nodo de aprobación humana
+app = workflow.compile(checkpointer=memory, interrupt_before=["aprobacion"])
+
+print("Grafo de LangGraph compilado correctamente con SQLite Checkpointing!\n")
+
+# 6. Ejecutar el Flujo
+config = {"configurable": {"thread_id": "reporte_nanomateriales_01"}}
+tema = "Clasificación de nanomateriales por riesgo ecotoxicológico"
+
+print("--- INICIANDO EJECUCIÓN ---")
+current_state = app.get_state(config)
+
+if not current_state.values:
+    # Si no hay estado previo, iniciamos desde cero
+    print("Iniciando nuevo reporte...")
+    inputs = {"tema": tema, "revisiones": 0, "aprobado": False}
+    for output in app.stream(inputs, config=config):
+        for key, value in output.items():
+            print(f"Completado: {key}")
+else:
+    print("Recuperando estado desde el checkpoint SQLite...")
+    for output in app.stream(None, config=config):
+        for key, value in output.items():
+            print(f"Completado: {key}")
+
+# 7. Comprobar la Interrupción (Human-in-the-loop)
+snapshot = app.get_state(config)
+
+if snapshot.next and snapshot.next[0] == "aprobacion":
+    print("\n[HUMAN IN THE LOOP] El grafo se ha detenido antes de 'aprobacion'.")
+    print("\n================ REPORTADOR BORRADOR ==================")
+    print(snapshot.values["reporte_borrador"])
+    print("=========================================================\n")
+    
+    print("Simulando que el HUMANO lee y aprueba el reporte...")
+    # El humano aprueba actualizando el estado
+    app.update_state(config, {"aprobado": True}, as_node="aprobacion")
+    
+    print("Continuando ejecución hacia el final...")
+    for output in app.stream(None, config=config):
+        for key, value in output.items():
+            print(f"Completado: {key}")
+
+estado_final = app.get_state(config)
+if "reporte_final" in estado_final.values:
+    print("\n[ÉXITO] El reporte fue publicado y guardado en SQLite de manera persistente.")

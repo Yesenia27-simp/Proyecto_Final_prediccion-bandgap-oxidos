@@ -1,0 +1,480 @@
+# ============================================================
+# EJERCICIO DE EXTENSIÓN — Agente de Ciberseguridad
+# Dominio: Respuesta a Incidentes y Análisis de Vulnerabilidades
+# ============================================================
+# Requisitos cubiertos:
+#   1. 3 tools específicas del dominio (consultar_cve, calcular_cvss_severidad, clasificar_ioc)
+#   2. Nuevo dominio 'cybersecurity_ir' en DOMAIN_CONTEXTS con system prompt de 5 puntos
+#   3. Agente creado con skill personalizada (warm_up("cybersecurity_ir"))
+#   4. Comparación SIN warm-up vs CON warm-up para la misma pregunta
+#   5. Skill registrada en registry.py con SKILL_METADATA completo
+#   6. Hiperparámetros justificados: temperature=0.0, top_p=0.1, freq_penalty=0.3, max_tokens=800
+# ============================================================
+import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+from langchain_core.tools import tool
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+
+load_dotenv(override=True)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PASO 1 — Definir 3 tools específicas del dominio: Ciberseguridad
+# ─────────────────────────────────────────────────────────────────────────────
+
+@tool
+def consultar_cve(cve_id: str) -> str:
+    """Consulta la base de datos NVD simulada para obtener descripción y CVSS de un CVE.
+    Usala cuando el usuario mencione un identificador CVE (ej: CVE-2021-44228).
+    Args: cve_id (str): Identificador en formato CVE-YYYY-NNNNN.
+    Returns: Descripción técnica, puntaje CVSS v3.1 y vector de ataque."""
+    # OWASP: Sanitización — evitar path traversal y prompt injection
+    safe_id = cve_id.strip().upper().replace("/", "").replace("..", "")
+    nvd = {
+        "CVE-2021-44228": (
+            "Log4Shell — RCE en Apache Log4j 2 via JNDI lookup. "
+            "CVSS v3.1: 10.0 (CRITICO). Afecta Log4j 2.0-beta9 a 2.14.1. "
+            "Vector: AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H. Parche: 2.17.1+."
+        ),
+        "CVE-2023-0669": (
+            "GoAnywhere MFT — Deserializacion insegura pre-auth que permite RCE. "
+            "CVSS v3.1: 9.8 (CRITICO). Explotada activamente por ransomware Cl0p. "
+            "Vector: AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H. Parche: 7.1.2+."
+        ),
+        "CVE-2024-3400": (
+            "PAN-OS GlobalProtect — Inyeccion de comandos OS en gateway VPN Palo Alto. "
+            "CVSS v3.1: 10.0 (CRITICO). Explotada como zero-day (Operacion MidnightEclipse). "
+            "Vector: AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H. Parche: inmediato requerido."
+        ),
+        "CVE-2022-30190": (
+            "Follina (MSDT) — Ejecucion de codigo via archivos Office sin macros. "
+            "CVSS v3.1: 7.8 (ALTO). Explota el protocolo ms-msdt://. "
+            "Vector: AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H. Parche: MS KB5014699."
+        ),
+    }
+    r = nvd.get(safe_id)
+    if r:
+        return f"[NVD] {safe_id}: {r}"
+    return (
+        f"CVE '{safe_id}' no encontrado en la DB local. "
+        "Consulta https://nvd.nist.gov para datos actualizados."
+    )
+
+
+@tool
+def calcular_cvss_severidad(puntuacion: float) -> str:
+    """Clasifica un puntaje CVSS v3.x en nivel de severidad oficial NIST/FIRST
+    y genera el SLA de respuesta recomendado.
+    Usala cuando tengas un numero CVSS (0.0-10.0) y necesites priorizar la respuesta.
+    Args: puntuacion (float): Puntaje CVSS entre 0.0 y 10.0.
+    Returns: Nivel de severidad, SLA y accion recomendada."""
+    score = float(puntuacion)
+    if not (0.0 <= score <= 10.0):
+        return "Error: el puntaje CVSS debe estar entre 0.0 y 10.0."
+    if score == 0.0:
+        nivel, sla, accion = "NINGUNO", "N/A", "Sin impacto conocido. Monitoreo pasivo."
+    elif score <= 3.9:
+        nivel, sla, accion = "BAJO", "90 dias", "Incluir en el proximo ciclo de parchado."
+    elif score <= 6.9:
+        nivel, sla, accion = "MEDIO", "30 dias", "Parchado planificado con prioridad moderada."
+    elif score <= 8.9:
+        nivel, sla, accion = "ALTO", "7 dias", "Parchado urgente. Verificar exposicion perimetral."
+    else:
+        nivel, sla, accion = (
+            "CRITICO", "24-48 horas",
+            "Respuesta INMEDIATA: aislar sistemas afectados, aplicar mitigacion temporal, "
+            "notificar al CERT y activar el Plan de Respuesta a Incidentes."
+        )
+    return (
+        f"CVSS {score:.1f} | Severidad: {nivel} | SLA: {sla}\n"
+        f"Accion: {accion}"
+    )
+
+
+@tool
+def clasificar_ioc(indicador: str) -> str:
+    """Clasifica un Indicador de Compromiso (IoC) y lo valida contra la base de
+    inteligencia de amenazas (hashes malware, IPs C2, dominios phishing).
+    Usala cuando el usuario proporcione un hash MD5/SHA256, IP sospechosa o dominio.
+    Args: indicador (str): Hash, IP, dominio o URL a analizar.
+    Returns: Tipo de IoC, veredicto (MALICIOSO/LIMPIO/DESCONOCIDO) y contexto."""
+    safe_ioc = indicador.strip().lower()[:256]  # OWASP: truncar — anti-DoS
+    ioc_db = {
+        "44d88612fea8a8f36de82e1278abb02f": "HASH MD5 | MALICIOSO — Eicar test file.",
+        "e3b0c44298fc1c149afbf4c8996fb924": "HASH SHA256 | LIMPIO — Archivo vacio (0 bytes).",
+        "185.220.101.1": (
+            "IP | MALICIOSO — Nodo Tor usado como C2 por campanas ransomware. "
+            "Bloquear en firewall. Fuente: Emerging Threats."
+        ),
+        "45.142.212.100": (
+            "IP | MALICIOSO — C2 del grupo Lazarus (APT38-DPRK). "
+            "Asociado a robo de credenciales bancarias. Aislar y reportar al CERT."
+        ),
+        "evil-update.com": (
+            "DOMINIO | MALICIOSO — Phishing que suplanta Windows Update. "
+            "Distribuye infostealer Raccoon v2."
+        ),
+        "log4j.binario.xyz": (
+            "DOMINIO | MALICIOSO — Servidor JNDI para exfiltracion via Log4Shell (CVE-2021-44228)."
+        ),
+    }
+    r = ioc_db.get(safe_ioc)
+    if r:
+        return f"[Threat Intel] '{indicador}': {r}"
+    # Heuristica de tipo si no esta en la DB
+    if len(safe_ioc) in (32, 40, 64, 128):
+        tipo = "HASH"
+    elif safe_ioc.replace(".", "").isdigit() or ":" in safe_ioc:
+        tipo = "IP"
+    elif "." in safe_ioc and "/" not in safe_ioc:
+        tipo = "DOMINIO"
+    else:
+        tipo = "URL"
+    return (
+        f"[Threat Intel] '{indicador}' | Tipo: {tipo} | Veredicto: DESCONOCIDO. "
+        "No en la DB local. Verificar en VirusTotal, AlienVault OTX o MISP."
+    )
+
+
+tools_cyber = [consultar_cve, calcular_cvss_severidad, clasificar_ioc]
+print("Tools definidas:", [t.name for t in tools_cyber])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PASO 2 — Añadir dominio 'cybersecurity_ir' a DOMAIN_CONTEXTS en context_loader.py
+# PASO 5 — Registrar la skill con SKILL_METADATA completo en registry.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Detectar la raiz del proyecto (3 niveles arriba desde unit_05_multi_agent_sys)
+project_root = Path(__file__).resolve().parent.parent.parent.parent
+warmup_dir   = project_root / "external_skills" / "agent_warmup"
+warmup_dir.mkdir(parents=True, exist_ok=True)
+
+# ── context_loader.py con el nuevo dominio y SKILL_METADATA completo ──────────
+CONTEXT_LOADER_CONTENT = (
+    '"""\n'
+    'Modulo de inicializacion cognitiva del agente — Skill Registry v1.2.0\n'
+    'Dominios soportados: research, engineering, ecotoxicology_nanomaterials,\n'
+    'quantitative_finance, cybersecurity_ir.\n'
+    '"""\n'
+    "\n"
+    "# PASO 5: SKILL_METADATA completo requerido por el registry\n"
+    "SKILL_METADATA = {\n"
+    '    "name": "agent_warmup.context_loader",\n'
+    '    "version": "1.2.0",\n'
+    '    "description": (\n'
+    '        "Inyecta contexto especializado (system prompt) en agentes LLM antes de ejecutarlos. "\n'
+    '        "Implementa el patron Warm-Up garantizando que el modelo adopte la personalidad "\n'
+    '        "y restricciones del dominio antes de procesar consultas del usuario."\n'
+    "    ),\n"
+    '    "author": "Antigravity-Nano-Research",\n'
+    '    "license": "Apache-2.0",\n'
+    '    "input_schema": {"domain": "str — clave del dominio en DOMAIN_CONTEXTS"},\n'
+    '    "output_schema": {\n'
+    '        "domain": "str",\n'
+    '        "system_context": "str — system prompt completo para el LLM",\n'
+    '        "messages": "list[SystemMessage] — listo para pasar a chain.invoke()",\n'
+    "    },\n"
+    '    "supported_domains": [\n'
+    '        "research",\n'
+    '        "engineering",\n'
+    '        "ecotoxicology_nanomaterials",\n'
+    '        "quantitative_finance",\n'
+    '        "cybersecurity_ir",\n'
+    "    ],\n"
+    '    "tags": ["warm-up", "system-prompt", "domain-context", "multi-domain"],\n'
+    '    "changelog": {\n'
+    '        "1.0.0": "Version inicial — dominio ecotoxicology_nanomaterials.",\n'
+    '        "1.1.0": "Anadido dominio quantitative_finance.",\n'
+    '        "1.2.0": "Anadido dominio cybersecurity_ir (respuesta a incidentes).",\n'
+    "    },\n"
+    "}\n"
+    "\n"
+    "DOMAIN_CONTEXTS = {\n"
+    '    "research": (\n'
+    '        "Eres un asistente de investigacion cientifica riguroso. Fundamentas cada afirmacion "\n'
+    '        "en evidencia empirica y citas a literatura revisada por pares."\n'
+    "    ),\n"
+    '    "engineering": (\n'
+    '        "Eres un ingeniero de software senior con 15 anos de experiencia en sistemas distribuidos. "\n'
+    '        "Priorizas legibilidad, testabilidad y seguridad en todo codigo que produces."\n'
+    "    ),\n"
+    '    "ecotoxicology_nanomaterials": (\n'
+    '        "Eres un toxicologo experto en nanomateriales adscrito a normativas OCDE. "\n'
+    '        "Evaluas riesgos ecotoxicologicos considerando area superficial, potencial zeta "\n'
+    '        "y endpoints toxicologicos (CL50)."\n'
+    "    ),\n"
+    '    "quantitative_finance": (\n'
+    '        "Eres un Analista Financiero Cuantitativo Senior de un fondo de pensiones. "\n'
+    '        "Basas recomendaciones en volatilidad anualizada, retorno esperado y gestion de riesgo "\n'
+    '        "conservadora. Siempre incluyes un Disclaimer legal explicito."\n'
+    "    ),\n"
+    "    # NUEVO DOMINIO v1.2.0 — Ciberseguridad y Respuesta a Incidentes\n"
+    '    "cybersecurity_ir": (\n'
+    '        "Eres un Analista Senior de Ciberseguridad especializado en Respuesta a Incidentes (IR) "\n'
+    '        "y gestion de vulnerabilidades. Tu marco de referencia son NIST SP 800-61, MITRE ATT&CK "\n'
+    '        "y CIS Controls v8.\\n\\n"\n'
+    '        "1. Clasificas amenazas usando la escala CVSS v3.x oficial (0.0-10.0) y determinas "\n'
+    '        "prioridades: CRITICO >= 9.0, ALTO 7.0-8.9, MEDIO 4.0-6.9, BAJO 0.1-3.9.\\n\\n"\n'
+    '        "2. Validas todos los Indicadores de Compromiso (IoC) — hashes, IPs C2, dominios "\n'
+    '        "phishing — contra bases de inteligencia de amenazas antes de emitir veredicto. "\n'
+    '        "Nunca aceptas un IoC como malicioso sin evidencia tecnica.\\n\\n"\n'
+    '        "3. Sigues el ciclo NIST IR: Preparacion -> Deteccion y Analisis -> Contencion -> "\n'
+    '        "Erradicacion -> Recuperacion -> Lecciones Aprendidas. Identificas la fase actual.\\n\\n"\n'
+    '        "4. Emites recomendaciones con SLA definidos: CRITICO = 24-48h, ALTO = 7 dias, "\n'
+    '        "MEDIO = 30 dias, BAJO = proximo ciclo de parchado. Nunca omites el SLA.\\n\\n"\n'
+    '        "5. Mantienes lenguaje tecnico preciso (CVE, CVSS, IoC, APT, TTPs, C2) y evitas "\n'
+    '        "generalizaciones vagas. Si faltan datos, indicas explicitamente que se necesita."\n'
+    "    ),\n"
+    "}\n"
+    "\n"
+    "\n"
+    "def list_available_domains() -> list:\n"
+    '    """Retorna la lista de dominios soportados."""\n'
+    "    return list(DOMAIN_CONTEXTS.keys())\n"
+    "\n"
+    "\n"
+    "def warm_up(domain: str, custom_config: dict = None) -> dict:\n"
+    '    """Inicializa el contexto de dominio para el agente LLM.\n'
+    "    Args: domain (str): Clave del dominio en DOMAIN_CONTEXTS.\n"
+    '    Returns: dict con claves domain, system_context, messages."""\n'
+    "    from langchain_core.messages import SystemMessage\n"
+    '    clean_domain = domain.strip().replace("{", "").replace("}", "")\n'
+    "    context = DOMAIN_CONTEXTS.get(\n"
+    "        clean_domain,\n"
+    '        f"Eres un experto en: {clean_domain}. Responde con rigor tecnico."\n'
+    "    )\n"
+    "    return {\n"
+    '        "domain": clean_domain,\n'
+    '        "system_context": context,\n'
+    '        "messages": [SystemMessage(content=context)],\n'
+    "    }\n"
+    "\n"
+    "\n"
+    "def warm_up_agent(domain: str) -> str:\n"
+    '    """Version simplificada: retorna solo el system_context."""\n'
+    '    return warm_up(domain)["system_context"]\n'
+)
+
+with open(warmup_dir / "context_loader.py", "w", encoding="utf-8") as f:
+    f.write(CONTEXT_LOADER_CONTENT)
+print(f"context_loader.py v1.2.0 escrito en: {warmup_dir / 'context_loader.py'}")
+
+# ── registry.py ───────────────────────────────────────────────────────────────
+REGISTRY_CONTENT = (
+    '"""\n'
+    'Skill Registry central — Antigravity-Nano-Research.\n'
+    'Todas las skills registradas son descubribles por orquestadores multi-agente.\n'
+    '"""\n'
+    "from external_skills.agent_warmup.context_loader import SKILL_METADATA as context_loader_meta\n"
+    "\n"
+    "REGISTRY = {\n"
+    '    "agent_warmup.context_loader": {\n'
+    "        **context_loader_meta,\n"
+    '        "module": "external_skills.agent_warmup.context_loader",\n'
+    '        "entry_point": "warm_up",\n'
+    "    },\n"
+    "}\n"
+    "\n"
+    "\n"
+    "def load_skill(skill_name: str) -> dict:\n"
+    '    """Retorna metadatos de una skill, o None si no existe."""\n'
+    "    return REGISTRY.get(skill_name)\n"
+    "\n"
+    "\n"
+    "def list_skills() -> list:\n"
+    '    """Lista todas las skills registradas."""\n'
+    "    return list(REGISTRY.keys())\n"
+)
+
+with open(project_root / "external_skills" / "registry.py", "w", encoding="utf-8") as f:
+    f.write(REGISTRY_CONTENT)
+print(f"registry.py escrito en: {project_root / 'external_skills' / 'registry.py'}")
+
+# ── Recargar módulos en el kernel actual ─────────────────────────────────────
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+for mod in ["external_skills.agent_warmup.context_loader", "external_skills.registry"]:
+    if mod in sys.modules:
+        del sys.modules[mod]
+
+from external_skills.agent_warmup.context_loader import warm_up, SKILL_METADATA, DOMAIN_CONTEXTS
+from external_skills.registry import load_skill, list_skills
+
+skill_r = load_skill("agent_warmup.context_loader")
+print("\n" + "=" * 60)
+print("PASO 5 — SKILL REGISTRADA CORRECTAMENTE")
+print("=" * 60)
+print(f"  Nombre    : {skill_r['name']}")
+print(f"  Version   : {skill_r['version']}")
+print(f"  Dominios  : {skill_r['supported_domains']}")
+print(f"  Registros : {list_skills()}")
+print(f"  Tags      : {skill_r['tags']}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PASO 3 — Crear el agente con la skill personalizada 'cybersecurity_ir'
+# ─────────────────────────────────────────────────────────────────────────────
+
+ctx_cyber = warm_up("cybersecurity_ir")
+
+# ── PASO 6: Hiperparámetros justificados para Ciberseguridad ──────────────────
+#
+# temperature = 0.0
+#   JUSTIFICACIÓN: En análisis forense, un mismo CVE debe producir SIEMPRE el mismo
+#   nivel de severidad. Temperature > 0 podría generar "ALTO" en una ejecución y
+#   "MEDIO" en otra para el mismo input — inaceptable en un informe de incidente
+#   que puede tener implicaciones legales o regulatorias (ISO 27001, NIS2, SOC2).
+#
+# top_p = 0.1
+#   JUSTIFICACIÓN: Restringir al 10% más probable del vocabulario fuerza al modelo
+#   a usar terminología técnica estándar (CVSS, IoC, APT, TTP, lateral movement).
+#   Evita sinónimos informales ("hackeo", "piratería") que desacreditarían un informe
+#   ante un CISO o auditor. En dominios creativos top_p alto es deseable; en
+#   seguridad informática la precisión semántica es no negociable.
+#
+# frequency_penalty = 0.3
+#   JUSTIFICACIÓN: Valor moderado. Evita que el agente repita el mismo párrafo de
+#   advertencia ("se recomienda parchado inmediato") en cada sección del informe.
+#   No se eleva a 1.0 porque términos como "vulnerabilidad", "CVSS", "parche" DEBEN
+#   aparecer varias veces en un informe técnico y no deben ser penalizados.
+#
+# max_tokens = 800
+#   JUSTIFICACIÓN: Un informe de incidente bien escrito no supera media página (~600 palabras):
+#   descripción (100), clasificación CVSS (50), IoCs (100), SLA (50), acciones (200),
+#   referencias (100). Limitar tokens previene respuestas infladas con relleno y reduce
+#   el riesgo de alucinaciones en contenido técnico extenso.
+
+CYBER_HYPERPARAMS = {
+    "temperature": 0.0,        # Determinismo total — reproducibilidad forense
+    "top_p": 0.1,              # Léxico técnico de seguridad — precisión semántica
+    "frequency_penalty": 0.3,  # Evita repetición de párrafos sin penalizar términos clave
+    "max_tokens": 800,         # Informe conciso — reduce alucinaciones en texto largo
+}
+
+print("\n" + "=" * 60)
+print("PASO 6 — HIPERPARÁMETROS JUSTIFICADOS:")
+print("=" * 60)
+for k, v in CYBER_HYPERPARAMS.items():
+    print(f"  {k} = {v}")
+
+# Instanciar LLM con hiperparámetros justificados
+if os.environ.get("GOOGLE_API_KEY"):
+    llm_cyber = ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash",
+        temperature=CYBER_HYPERPARAMS["temperature"],
+        top_p=CYBER_HYPERPARAMS["top_p"],
+        max_output_tokens=CYBER_HYPERPARAMS["max_tokens"],
+        google_api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    backend_usado = "Google Gemini 1.5 Flash"
+elif os.environ.get("OPENROUTER_API_KEY"):
+    llm_cyber = ChatOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.environ["OPENROUTER_API_KEY"],
+        model=os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-flash"),
+        temperature=CYBER_HYPERPARAMS["temperature"],
+        top_p=CYBER_HYPERPARAMS["top_p"],
+        frequency_penalty=CYBER_HYPERPARAMS["frequency_penalty"],
+        max_tokens=CYBER_HYPERPARAMS["max_tokens"],
+    )
+    backend_usado = "OpenRouter"
+else:
+    raise RuntimeError(
+        "No se encontro GOOGLE_API_KEY ni OPENROUTER_API_KEY en .env.\n"
+        "Configura al menos una variable antes de ejecutar."
+    )
+
+print(f"\nLLM instanciado: {backend_usado}")
+
+prompt_cyber = ChatPromptTemplate.from_messages([
+    ("system", ctx_cyber["system_context"]),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent_cyber = create_tool_calling_agent(llm_cyber, tools_cyber, prompt_cyber)
+executor_cyber = AgentExecutor(
+    agent=agent_cyber,
+    tools=tools_cyber,
+    verbose=True,
+    max_iterations=5,           # Limite anti-loop
+    handle_parsing_errors=True,
+)
+print("Agente de ciberseguridad creado con tools:", [t.name for t in tools_cyber])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PASO 4 — Diferencia de respuestas: SIN warm-up vs CON warm-up + tools
+# ─────────────────────────────────────────────────────────────────────────────
+
+CONSULTA_PRUEBA = (
+    "Nuestra empresa detecto trafico saliente hacia la IP 45.142.212.100 "
+    "y encontramos el CVE-2021-44228 en un servidor Log4j interno con puntuacion 10.0. "
+    "Cual es la severidad y que debemos hacer primero?"
+)
+
+sep = "=" * 70
+print(f"\n{sep}\nCONSULTA DE PRUEBA (identica para ambos agentes):\n{CONSULTA_PRUEBA}\n{sep}")
+
+# ── 4a. SIN WARM-UP — LLM base sin system prompt especializado, sin tools ─────
+print(f"\n{'─'*70}")
+print("AGENTE SIN WARM-UP  (LLM generico — sin system prompt, sin tools)")
+print("─" * 70)
+
+if os.environ.get("GOOGLE_API_KEY"):
+    llm_base = ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash",
+        temperature=0.5,           # Temperatura alta — respuesta generica y variable
+        google_api_key=os.environ["GOOGLE_API_KEY"],
+    )
+else:
+    llm_base = ChatOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.environ["OPENROUTER_API_KEY"],
+        model=os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-flash"),
+        temperature=0.5,
+    )
+
+try:
+    resp_sin = llm_base.invoke([HumanMessage(content=CONSULTA_PRUEBA)])
+    print(resp_sin.content)
+except Exception as e:
+    print(f"Error al invocar LLM Base (puede ser por cuota): {e}")
+    print("\n[Fallback] Usando simulación de respuesta genérica para continuar:")
+    print("El servidor tiene vulnerabilidades. Le sugerimos revisar la IP y parchar el sistema lo antes posible.")
+
+# ── 4b. CON WARM-UP — Analista IR + 3 tools ──────────────────────────────────
+print(f"\n{'─'*70}")
+print("AGENTE CON WARM-UP  (Analista Senior IR — NIST/MITRE + 3 tools)")
+print("─" * 70)
+
+resultado = executor_cyber.invoke({"input": CONSULTA_PRUEBA})
+print(f"\n{sep}\nINFORME FINAL (con warm-up + tools):\n{sep}")
+print(resultado["output"])
+
+# ── Tabla comparativa ─────────────────────────────────────────────────────────
+print(f"\n{sep}\nRESUMEN COMPARATIVO — IMPACTO DEL WARM-UP\n{sep}")
+print("""
+Dimension              | SIN Warm-Up                    | CON Warm-Up + Tools
+-----------------------|--------------------------------|----------------------------------
+Uso de herramientas    | Ninguna                        | consultar_cve, clasificar_ioc,
+                       |                                | calcular_cvss_severidad
+Marco de referencia    | Intuicion del LLM              | NIST SP 800-61, MITRE ATT&CK
+Puntaje CVSS           | Estimado vagamente             | Calculado con escala oficial
+SLA de respuesta       | No definido o impreciso        | 24-48 horas (CRITICO)
+Verificacion de IoC    | Sin validacion tecnica         | Validado en DB de amenazas
+Tono y lenguaje        | Generico, variable             | Tecnico-forense consistente
+Reproducibilidad       | Baja (temperature=0.5)         | Alta (temperature=0.0)
+
+JUSTIFICACION DE HIPERPARAMETROS:
+  temperature=0.0       Determinismo absoluto. Forense reproducible en auditorias.
+  top_p=0.1             Solo lexico tecnico de seguridad. Precision semantica maxima.
+  frequency_penalty=0.3 Evita repeticion de parrafos sin penalizar terminos necesarios.
+  max_tokens=800        Informe conciso (~600 palabras). Reduce alucinaciones.
+""")

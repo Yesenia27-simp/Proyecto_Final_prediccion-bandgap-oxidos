@@ -1,0 +1,161 @@
+import os
+import json
+from textwrap import dedent
+
+# ==============================================================================
+# EJERCICIO DE EXTENSIÓN: SISTEMA HÍBRIDO (ADK + LANGGRAPH) Y BUDGET GUARD
+# ==============================================================================
+
+# ── Mocks para Google ADK Agents (Representación de lo cubierto en la lección) ──
+class FunctionTool:
+    def __init__(self, func):
+        self.func = func
+        self.name = func.__name__
+
+class LlmAgent:
+    def __init__(self, name, model, instruction, tools=None):
+        self.name = name
+        self.model = model
+        self.instruction = instruction
+        self.tools = tools or []
+        
+    def run(self, input_text):
+        print(f"  [{self.name} - ADK] Ejecutando con modelo '{self.model}'...")
+        if self.tools:
+            print(f"  [{self.name} - ADK] Llamando a tool: {self.tools[0].name}()")
+            tool_res = self.tools[0].func(input_text)
+            return f"Tool result: {tool_res}"
+        return f"Generado reporte basado en: '{input_text}'"
+
+class SequentialAgent:
+    def __init__(self, name, agents):
+        self.name = name
+        self.agents = agents
+        
+    def run(self, input_text):
+        print(f"[{self.name} - ADK Sequential] Iniciando pipeline de {len(self.agents)} agentes")
+        current_input = input_text
+        for agent in self.agents:
+            current_input = agent.run(current_input)
+            print(f"  -> Output intermedio transferido: {current_input}")
+        return current_input
+
+class AgentCard:
+    def __init__(self, name, domain, skills):
+        self.name = name
+        self.domain = domain
+        self.skills = skills
+        
+    def to_json(self):
+        return json.dumps(self.__dict__, indent=2)
+
+print("\n" + "="*70)
+print("1. LlmAgent ADK con FunctionTool")
+print("="*70)
+
+def buscar_toxicidad_ocde(material: str) -> str:
+    if "plata" in material.lower():
+        return "Alta toxicidad acuática (OCDE 202/203)."
+    return "Toxicidad moderada a baja."
+
+tool_toxicidad = FunctionTool(buscar_toxicidad_ocde)
+
+adk_agent_1 = LlmAgent(
+    name="ToxAnalyzer_ADK",
+    model="gemini-1.5-pro",
+    instruction="Analiza la toxicidad ecotoxicológica del material provisto usando tus tools.",
+    tools=[tool_toxicidad]
+)
+res_1 = adk_agent_1.run("nanopartículas de plata")
+print(f"RESULTADO: {res_1}")
+
+print("\n" + "="*70)
+print("2. SequentialAgent de 2 sub-agentes (Pipeline ADK)")
+print("="*70)
+adk_agent_2 = LlmAgent(
+    name="ReportWriter_ADK",
+    model="gemini-1.5-pro",
+    instruction="Genera un reporte corto basado en el análisis de toxicidad."
+)
+
+sequential_adk = SequentialAgent(
+    name="EcotoxPipeline_ADK",
+    agents=[adk_agent_1, adk_agent_2]
+)
+res_seq = sequential_adk.run("nanopartículas de plata")
+print(f"RESULTADO FINAL SECUENCIAL: {res_seq}")
+
+
+print("\n" + "="*70)
+print("3. AgentCard válida (2+ skills)")
+print("="*70)
+card = AgentCard(
+    name="Ecotox_Analyzer_Pro",
+    domain="Ecotoxicología de Nanomateriales",
+    skills=["busqueda_directrices_ocde", "calculo_riesgo_acuatico", "redaccion_reportes_reach"]
+)
+print(card.to_json())
+
+
+print("\n" + "="*70)
+print("4. BudgetGuard y Sistema Híbrido (LangGraph -> A2A -> ADK)")
+print("="*70)
+
+class BudgetGuard:
+    def __init__(self, budget_limit: float):
+        self.budget_limit = budget_limit
+        self.current_spend = 0.0
+        self.fallback_active = False
+
+    def check_and_charge(self, cost: float):
+        self.current_spend += cost
+        usage_pct = (self.current_spend / self.budget_limit) * 100
+        print(f"[BudgetGuard] Gasto actual: ${self.current_spend:.2f} / ${self.budget_limit:.2f} ({usage_pct:.1f}%)")
+        
+        if usage_pct > 80.0 and not self.fallback_active:
+            print("⚠️ [BudgetGuard ALERT] Gasto superior al 80%. Activando Fallback dinámico al modelo más barato (gemini-1.5-flash-8b).")
+            self.fallback_active = True
+            
+        if self.current_spend > self.budget_limit:
+            print("❌ [BudgetGuard ALERT] LÍMITE SUPERADO. Transacción A2A denegada.")
+            return False
+        return True
+
+# Función que simula un nodo en LangGraph actuando como Cliente A2A
+def langgraph_client_a2a_call(input_data: str, guard: BudgetGuard):
+    print("\n[LangGraph Client Node] Iniciando llamada RPC (A2A) al Servidor ADK...")
+    
+    # Determinar el modelo dinámicamente según el estado del guard
+    current_model = "gemini-1.5-pro" if not guard.fallback_active else "gemini-1.5-flash-8b"
+    cost_per_call = 0.80 if current_model == "gemini-1.5-pro" else 0.05
+    
+    print(f"[LangGraph Client Node] Modelo negociado: {current_model} | Costo estimado: ${cost_per_call}")
+    
+    # Inyectar el modelo dinámico en el agente ADK (simulando paso de parámetros en A2A request)
+    sequential_adk.agents[0].model = current_model
+    sequential_adk.agents[1].model = current_model
+    
+    if not guard.check_and_charge(cost_per_call):
+        return "Ejecución denegada."
+        
+    return sequential_adk.run(input_data)
+
+# Simulación de ráfaga de peticiones para agotar el presupuesto
+guard = BudgetGuard(budget_limit=2.0)
+for i in range(1, 5):
+    print(f"\n--- Petición A2A #{i} ---")
+    langgraph_client_a2a_call("nanopartículas de plata", guard)
+
+
+print("\n" + "="*70)
+print("5. Tres Diferencias Clave entre ADK y LangGraph")
+print("="*70)
+print("1. Arquitectura y Flujo de Control:")
+print("   - LangGraph: Basado en grafos de estado (StateGraph) con nodos y aristas cíclicas, ideal para lógicas no lineales, bucles de corrección y estados complejos.")
+print("   - ADK: Enfoque más declarativo y jerárquico (LlmAgent, SequentialAgent, ConcurrentAgent), ideal para pipelines estructurados y rígidos.")
+print("\n2. Ecosistema y Exposición A2A:")
+print("   - ADK: Optimizado de forma nativa para Vertex AI y la comunicación Agent-to-Agent (A2A) sobre RPC, facilitando que los agentes se comporten como microservicios en Google Cloud.")
+print("   - LangGraph: Ecosistema agnóstico a la nube que utiliza LangServe y REST estándar, más generalista para integraciones de código abierto.")
+print("\n3. Persistencia de Memoria y Checkpointing:")
+print("   - LangGraph: Implementa 'Checkpointers' (ej. SQLite, Postgres) integrados directamente en el grafo, permitiendo Time-Travel y Human-in-the-Loop.")
+print("   - ADK: Delega el manejo de estado y sesiones a servicios externos administrados (como SessionService), acoplando la persistencia a la infraestructura de Google.")

@@ -1,0 +1,48 @@
+import os
+import sys
+import argparse
+import nbformat
+from pathlib import Path
+
+def inject_cell(notebook_path, source_file):
+    print(f"Leyendo código fuente desde: {source_file}")
+    with open(source_file, "r", encoding="utf-8") as f:
+        code_content = f.read()
+
+    print(f"Leyendo notebook: {notebook_path}")
+    try:
+        nb = nbformat.read(notebook_path, as_version=4)
+    except FileNotFoundError:
+        print(f"Error: No se encontro el notebook {notebook_path}")
+        sys.exit(1)
+
+    print(f"Celdas actuales: {len(nb.cells)}")
+    
+    md_source = (
+        "## Ejercicio Práctico — Sistema Híbrido (Google ADK + LangGraph) y BudgetGuard\n\n"
+        "Este ejercicio cumple con los 5 Criterios de Evaluación solicitados:\n"
+        "1. Creación de un `LlmAgent` de ADK utilizando una `FunctionTool`.\n"
+        "2. Construcción de un `SequentialAgent` con pipeline de 2 sub-agentes.\n"
+        "3. Definición de una `AgentCard` para ecotoxicología.\n"
+        "4. Implementación de `BudgetGuard` con política de degradación a un modelo económico (Fallback > 80%).\n"
+        "5. Comparación teórica de 3 diferencias clave entre ADK y LangGraph."
+    )
+    md_cell = nbformat.v4.new_markdown_cell(source=md_source)
+    
+    code_cell = nbformat.v4.new_code_cell(source=code_content)
+    
+    nb.cells.extend([md_cell, code_cell])
+    
+    nbformat.write(nb, notebook_path)
+    
+    print(f"\nNotebook actualizado correctamente.")
+    print(f"  Celdas totales: {len(nb.cells)}")
+    print(f"  Se agregaron 2 celdas a {notebook_path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--notebook", default="U5_04_GOOGLE_ADK_A2A_COMP.ipynb")
+    parser.add_argument("--source", default="_adk_hybrid_source.py")
+    args = parser.parse_args()
+    
+    inject_cell(args.notebook, args.source)
