@@ -1,0 +1,13 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[user]
+	name = Yesenia27-simp
+	email = 230048@ucemich.edu.mx
+[remote "origin"]
+	url = https://github.com/Yesenia27-simp/Proyecto_Final_prediccion-bandgap-oxidos.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
